@@ -1,0 +1,18 @@
+#cloud-config
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDH4Y69f9rwj6BxLysY+Xk6lu3e2tWcWqaieWSY1ofNJmeNe/YsLpZ2HGDEWu4l/HkCZ4nxtZ69tedV779PospEhHG5mVbZavf5I7nvsBW5T64UN/j3qi38+lwZnzLlkReGz6IE4ju5AUvNnKpsgUW4nd7ggN47QKzFXBkdBlUcJlkoCL6eGz6KsrPLoFB1pWMDGqVRT95NYKOfawcWb0AmuolcKjYev25kxSHuVuhaVfF7j2coat4l5Dv2A2yrYNFJixu4qrBaumcOkHzMJ6EQwEadm4adREkLrjhKteKJsMzMoXTwJNLOpVzemI5cWFmOCv6c2r0RxtLDwKJR819t k@k-osx
+write_files:
+  - path: /etc/ssh/sshd_config
+    permissions: "0600"
+    owner: root:root
+    content: |
+      AuthorizedKeysFile .ssh/authorized_keys
+      ClientAliveInterval 180
+      Subsystem sftp /usr/libexec/sftp-server
+      UseDNS no
+      PermitRootLogin no
+      ServerKeyBits 2048
+      AllowGroups docker
+rancher:
+  services_include:
+    open-vm-tools: true

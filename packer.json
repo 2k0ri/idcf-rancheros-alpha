@@ -1,0 +1,44 @@
+{
+  "builders": [
+    {
+      "type": "vmware-iso",
+      "iso_url":"./rancheros.iso",
+      "iso_checksum_type": "md5",
+      "iso_checksum": "eb58ac4958cf66bb9c2675cd7e565419",
+      "http_directory": "files",
+      "boot_command": [
+        "wget -O /tmp/cloud-config.yml http://{{ .HTTPIP }}:{{ .HTTPPort }}/cloud-config.yml<enter>",
+        "sudo ros install -c /tmp/cloud-config.yml -f -d /dev/sda<enter>"
+      ],
+      "disk_size": 10240,
+      "vmx_data": {
+        "cpuid.coresPerSocket": "1",
+        "memsize": "2048",
+        "numvcpus": "1"
+      },
+      "ssh_port": 22,
+      "ssh_username": "rancher",
+      "ssh_private_key_file": "{{user `HOME`}}/.ssh/id_rsa",
+      "ssh_wait_timeout": "10m",
+      "boot_wait": "45s",
+      "headless": false,
+      "shutdown_command": "sudo -S shutdown -h now"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["sleep 30"]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "ovftool",
+      "only": ["vmware-iso"],
+      "format": "ova"
+    }
+  ],
+  "variables": {
+    "HOME": "{{env `HOME`}}"
+  }
+}
