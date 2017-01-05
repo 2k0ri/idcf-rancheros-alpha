@@ -5,11 +5,10 @@ write_files:
     owner: root
     content: |
       #!/bin/bash
-      
       get_dhcp_ip() {
-          local found=0
+          local found=1
           local retry=0
-          until [[ $found -ne 0 || retry -ge 20 ]]; do
+          until [[ $found -eq 0 || retry -ge 20 ]]; do
               sleep $((retry++))
               for eth in $(sudo system-docker exec network sh -c 'ls /var/db/dhcpcd-*.lease' | sed -r 's/.*dhcpcd-(.*)\.lease/\1/'); do
                   dhcp_server_ip=$(sudo system-docker exec network dhcpcd -U $eth 2> /dev/null | awk -F= '/dhcp_server_identifier/ { print $2 }')
@@ -17,19 +16,19 @@ write_files:
                       metadata_url="http://${dhcp_server_ip}/latest/meta-data/"
                       if wget -qO /dev/null "${metadata_url}"; then
                           echo $dhcp_server_ip
-                          found=1
+                          found=0
                           break
                       fi
                   fi
               done
           done
-          return [[ $found -ne 0 ]]
+          return $found
       }
   - path: /usr/bin/cloudstack-cloudinit
     permissions: "0755"
     owner: root
     content: |
-      #!/bin/bash -e
+      #!/bin/bash
       
       . /usr/bin/cloudstack-dhcp
       
@@ -47,7 +46,29 @@ write_files:
       do
           echo "- ${line}" >> /var/lib/rancher/conf/cloud-config.d/cloudstack.yml
       done
-      cloud-init-execute -pre-console -console
+      if [[ ! -f /tmp/.cloudstack-cloudinit ]]; then
+          touch /tmp/.cloudstack-cloudinit
+          cloud-init-execute -pre-console -console
+          rm /tmp/.cloudstack-cloudinit
+      fi
+  - container: ntp
+    path: /etc/ntp.conf
+    permissions: "0644"
+    owner: root
+    content: |
+      tinker panic 0
+      # Common pool
+      server -4 ntp1.noah.idc.jp burst iburst
+      server -4 ntp2.noah.idc.jp burst iburst
+      
+      # - Allow only time queries, at a limited rate.
+      # - Allow all local queries (IPv4, IPv6)
+      restrict default ignore
+      restrict -6 default ignore
+      restrict 127.0.0.1
+      restrict ::1
+      restrict ntp1.noah.idc.jp nomodify notrap noquery
+      restrict ntp2.noah.idc.jp nomodify notrap noquery
 runcmd:
 - [/usr/bin/cloudstack-cloudinit]
 rancher:

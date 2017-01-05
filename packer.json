@@ -7,11 +7,9 @@
       "iso_checksum": "eb58ac4958cf66bb9c2675cd7e565419",
       "http_directory": "files",
       "boot_command": [
-        "echo 'rancher:rancher' | sudo chpasswd<enter>",
-        "wget -O /tmp/cloud-config.yml http://{{ .HTTPIP }}:{{ .HTTPPort }}/cloud-config.yml<enter>",
-        "sudo ros install --no-reboot -c /tmp/cloud-config.yml -f -d /dev/sda<enter>"
+        "echo 'rancher:rancher' | sudo chpasswd<enter>"
       ],
-      "disk_size": 10240,
+      "disk_size": 5120,
       "vmx_data": {
         "cpuid.coresPerSocket": "1",
         "memsize": "2048",
@@ -22,8 +20,21 @@
       "ssh_password": "rancher",
       "ssh_wait_timeout": "10m",
       "boot_wait": "45s",
-      "headless": false,
+      "headless": true,
       "shutdown_command": "sudo -S shutdown -h now"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "files/cloud-config.yml",
+      "destination": "/tmp/cloud-config.yml"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo ros install --no-reboot -c /tmp/cloud-config.yml -f -d /dev/sda"
+      ]
     }
   ],
   "post-processors": [
