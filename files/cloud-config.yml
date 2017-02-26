@@ -11,7 +11,7 @@ write_files:
           until [[ $found -eq 0 || retry -ge 20 ]]; do
               sleep $((retry++))
               for eth in $(sudo system-docker exec network sh -c 'ls /var/db/dhcpcd-*.lease' | sed -r 's/.*dhcpcd-(.*)\.lease/\1/'); do
-                  dhcp_server_ip=$(sudo system-docker exec network dhcpcd -U $eth 2> /dev/null | awk -F= '/dhcp_server_identifier/ { print $2 }')
+                  dhcp_server_ip=$(sudo system-docker exec network dhcpcd -U $eth 2> /dev/null | awk -F= '/dhcp_server_identifier/{print $2}')
                   if [[ -n "${dhcp_server_ip}" ]]; then
                       metadata_url="http://${dhcp_server_ip}/latest/meta-data/"
                       if wget -qO /dev/null "${metadata_url}"; then
@@ -29,19 +29,12 @@ write_files:
     owner: root
     content: |
       #!/bin/bash
-      
       . /usr/bin/cloudstack-dhcp
-      
       DHCP_SERVER=$(get_dhcp_ip)
+      USERDATA_URL="http://${DHCP_SERVER}/latest/user-data"
+      wget -qO /var/lib/rancher/conf/cloud-config.d/cloudstack.yml "${USERDATA_URL}"
       KEY_URL="http://${DHCP_SERVER}/latest/meta-data/public-keys"
-      
-      cat <<EOT > /var/lib/rancher/conf/cloud-config.d/cloudstack.yml
-      rancher:
-        cloud_init:
-          datasources:
-          - ec2:http://${DHCP_SERVER}
-      ssh_authorized_keys:
-      EOT
+      echo "ssh_authorized_keys:" >> /var/lib/rancher/conf/cloud-config.d/cloudstack.yml
       { wget -qO- "${KEY_URL}"; echo; } | while read -r line
       do
           echo "- ${line}" >> /var/lib/rancher/conf/cloud-config.d/cloudstack.yml
@@ -71,6 +64,3 @@ write_files:
       restrict ntp2.noah.idc.jp nomodify notrap noquery
 runcmd:
 - [/usr/bin/cloudstack-cloudinit]
-rancher:
-  services_include:
-    open-vm-tools: true

@@ -4,12 +4,12 @@
       "type": "vmware-iso",
       "iso_url":"./rancheros.iso",
       "iso_checksum_type": "md5",
-      "iso_checksum": "eb58ac4958cf66bb9c2675cd7e565419",
+      "iso_checksum": "{{user `md5`}}",
       "http_directory": "files",
       "boot_command": [
         "echo 'rancher:rancher' | sudo chpasswd<enter>"
       ],
-      "disk_size": 5120,
+      "disk_size": "{{user `disk`}}",
       "vmx_data": {
         "cpuid.coresPerSocket": "1",
         "memsize": "2048",
